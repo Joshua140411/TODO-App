@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>FocusFlow · Aufgaben & Zeit</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#todos"><span class="brand-mark">F</span><span>FocusFlow<small>Dein Fokus. Dein System.</small></span></a>
+    <div class="nav-label">ARBEITSPLATZ</div>
+    <nav aria-label="Hauptnavigation">
+      <button class="nav active" data-tab="todos"><span>☑</span> Aufgaben <b id="nav-count">0</b></button>
+      <button class="nav" data-tab="categories"><span>▦</span> Themen & Kategorien</button>
+      <button class="nav" data-tab="statistics"><span>▥</span> Statistiken</button>
+    </nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span> Lokal · Einzelbenutzer
+      <p>Deine Daten bleiben auf deinem Rechner. Keine Cloud, keine externen Bibliotheken.</p>
+      <a class="button secondary" href="/api/export" download>Datensicherung exportieren</a>
+      <small>Prototyp v0.1 · .NET 10</small>
+    </div>
+  </aside>
+  <main>
+    <header class="page-header"><div><div class="eyebrow" id="header-eyebrow">DEIN ARBEITSTAG</div><h1 id="page-title">Aufgaben</h1><p id="page-subtitle">Plane, verknüpfe und erfasse deinen Fortschritt.</p></div><button class="button primary" id="new-button">+ Neue Aufgabe</button></header>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <div id="summary" class="summary"></div>
+    <section id="todos-tab" aria-label="Aufgaben">
+      <form id="filters" class="panel filter-panel">
+        <div class="filter-main">
+          <label class="search-label"><span class="sr-only">Volltextsuche</span><input name="q" type="search" placeholder="Aufgaben, Beschreibungen, Themen durchsuchen …" autocomplete="off"></label>
+          <label><span class="sr-only">Status</span><select name="status"><option value="">Alle Status</option><option value="Open">Offen</option><option value="InProgress">In Bearbeitung</option><option value="Done">Erledigt</option><option value="Cancelled">Abgebrochen</option></select></label>
+          <label><span class="sr-only">Kategorie</span><select name="category" id="filter-category"><option value="">Alle Themen</option></select></label>
+          <label><span class="sr-only">Priorität</span><select name="priority"><option value="">Alle Prioritäten</option><option value="Urgent">Dringend</option><option value="High">Hoch</option><option value="Normal">Normal</option><option value="Low">Niedrig</option></select></label>
+        </div>
+        <details><summary>Erweiterte Filter & Sortierung</summary>
+          <div class="form-grid filter-grid">
+            <label>Ressource enthält<input name="resource" placeholder="Person, Team oder Werkzeug"></label>
+            <label>Beschreibung enthält<input name="description"></label>
+            <label>Fälligkeit<select name="dueMode"><option value="">Alle</option><option value="overdue">Überfällig und aktiv</option><option value="week">In den nächsten 7 Tagen</option><option value="none">Ohne Termin</option></select></label>
+            <label>Timer<select name="timer"><option value="">Alle</option><option value="active">Läuft gerade</option><option value="tracked">Mit Zeitbuchungen</option><option value="untracked">Ohne Zeitbuchung</option></select></label>
+            <label>Erstellt ab<input name="createdFrom" type="date"></label><label>Erstellt bis<input name="createdTo" type="date"></label>
+            <label>Fällig ab<input name="dueFrom" type="date"></label><label>Fällig bis<input name="dueTo" type="date"></label>
+            <label>Geändert ab<input name="updatedFrom" type="date"></label><label>Geändert bis<input name="updatedTo" type="date"></label>
+            <label>Erledigt ab<input name="completedFrom" type="date"></label><label>Erledigt bis<input name="completedTo" type="date"></label>
+            <label>Planaufwand min. in h<input name="estimateMin" type="number" min="0" step="0.1"></label><label>Planaufwand max. in h<input name="estimateMax" type="number" min="0" step="0.1"></label>
+            <label>Ist-Aufwand min. in h<input name="spentMin" type="number" min="0" step="0.1"></label><label>Ist-Aufwand max. in h<input name="spentMax" type="number" min="0" step="0.1"></label>
+            <label>Übergeordnete Aufgabe<select name="parent" id="filter-parent"><option value="">Alle</option><option value="none">Ohne übergeordnete Aufgabe</option></select></label>
+            <label>Verknüpft mit<select name="related" id="filter-related"><option value="">Alle</option></select></label>
+            <label>Sortieren nach<select name="sort"><option value="createdAt">Erstellungsdatum</option><option value="title">Titel</option><option value="dueAt">Fälligkeit</option><option value="priority">Priorität</option><option value="status">Status</option><option value="estimatedHours">Planaufwand</option><option value="spent">Ist-Aufwand</option><option value="updatedAt">Letzte Änderung</option><option value="completedAt">Abschlussdatum</option><option value="resource">Ressource</option><option value="description">Beschreibung</option><option value="category">Thema</option><option value="parent">Übergeordnete Aufgabe</option><option value="links">Anzahl Verknüpfungen</option></select></label>
+            <label>Reihenfolge<select name="direction"><option value="desc">Absteigend</option><option value="asc">Aufsteigend</option></select></label>
+          </div>
+          <button type="button" class="button secondary small" id="reset-filters">Filter zurücksetzen</button>
+        </details>
+      </form>
+      <div class="section-heading"><h2>Deine Aufgaben <span id="list-count" class="muted"></span></h2><span class="muted small-text">Klicke auf einen Titel für Details und Zeitbuchungen</span></div>
+      <div id="todo-list" class="todo-list"></div>
+    </section>
+    <section id="categories-tab" hidden aria-label="Kategorien">
+      <p class="helper">Themen bündeln mehrere Aufgaben. Bei Mehrfachzuordnung zählt die gesamte Aufgabenzeit in jedes zugeordnete Thema; die globale Zeit wird nur einmal gezählt.</p>
+      <div id="category-list" class="category-grid"></div>
+    </section>
+    <section id="statistics-tab" hidden aria-label="Statistiken"><div id="statistics-content"></div></section>
+    <footer class="footer">FocusFlow · lokal gespeichert · <span id="connection-status">Verbinde …</span></footer>
+  </main>
+  <div id="timer-bar" class="timer-bar" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <dialog id="todo-dialog">
+    <form id="todo-form">
+      <div class="dialog-heading"><div><div class="eyebrow">AUFGABENPLANUNG</div><h2 id="todo-dialog-title">Neue Aufgabe</h2></div><button type="button" class="icon-button" data-close="todo-dialog" aria-label="Schließen">×</button></div>
+      <input type="hidden" name="id">
+      <div class="form-grid">
+        <label class="full">Titel *<input name="title" required maxlength="200" autofocus placeholder="Was möchtest du erledigen?"></label>
+        <label class="full">Beschreibung<textarea name="description" maxlength="10000" rows="4" placeholder="Ziel, Notizen, Akzeptanzkriterien …"></textarea></label>
+        <label>Erstellt am *<input name="createdAt" type="datetime-local" required></label>
+        <label>Fällig am<input name="dueAt" type="datetime-local"></label>
+        <label>Status<select name="status"><option value="Open">Offen</option><option value="InProgress">In Bearbeitung</option><option value="Done">Erledigt</option><option value="Cancelled">Abgebrochen</option></select></label>
+        <label>Priorität<select name="priority"><option value="Low">Niedrig</option><option value="Normal" selected>Normal</option><option value="High">Hoch</option><option value="Urgent">Dringend</option></select></label>
+        <label>Geschätzter Workload in Stunden<input name="estimatedHours" type="number" min="0" max="100000" step="0.01" value="0" required></label>
+        <label>Ressource / verantwortlich<input name="resource" maxlength="200" placeholder="z. B. Ich, Design-Team, Testsystem"></label>
+        <label>Übergeordnete Aufgabe<select name="parentTodoId"></select></label>
+        <label>Themen & Kategorien<select name="categoryIds" multiple size="5"></select></label>
+        <label class="full">Weitere verknüpfte Aufgaben<select name="relatedTodoIds" multiple size="4"></select><small>Mehrfachauswahl: Strg/Cmd + Klick. Verknüpfungen sind Querverweise, keine blockierenden Abhängigkeiten.</small></label>
+      </div>
+      <div class="form-error" id="todo-error" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button secondary" data-close="todo-dialog">Abbrechen</button><button class="button primary" type="submit">Aufgabe speichern</button></div>
+    </form>
+  </dialog>
+  <dialog id="category-dialog">
+    <form id="category-form">
+      <div class="dialog-heading"><div><div class="eyebrow">THEMEN ORGANISIEREN</div><h2 id="category-dialog-title">Neue Kategorie</h2></div><button type="button" class="icon-button" data-close="category-dialog" aria-label="Schließen">×</button></div>
+      <input name="id" type="hidden">
+      <div class="form-grid">
+        <label class="full">Name *<input name="name" required maxlength="100" autofocus></label>
+        <label class="full">Beschreibung<textarea name="description" rows="3" maxlength="5000"></textarea></label>
+        <label>Farbe<input name="color" type="color" value="#f97316"></label>
+        <label>Zeitbudget in Stunden<input name="budgetHours" type="number" min="0" max="100000" step="0.01" value="0" required></label>
+        <label>Ressource / Ansprechpartner<input name="resource" maxlength="200"></label>
+        <label>Zieltermin<input name="targetDate" type="datetime-local"></label>
+      </div>
+      <div id="category-error" class="form-error" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button secondary" data-close="category-dialog">Abbrechen</button><button class="button primary" type="submit">Kategorie speichern</button></div>
+    </form>
+  </dialog>
+  <dialog id="detail-dialog"><div id="detail-content"></div></dialog>
+  <dialog id="time-dialog">
+    <form id="time-form">
+      <div class="dialog-heading"><h2>Zeit nachtragen</h2><button type="button" class="icon-button" data-close="time-dialog" aria-label="Schließen">×</button></div>
+      <p class="helper">Für vergessenes Tracking. Keine Überschneidungen oder Buchungen in der Zukunft.</p>
+      <input name="todoId" type="hidden">
+      <div class="form-grid">
+        <label>Beginn *<input name="startedAt" type="datetime-local" required></label>
+        <label>Dauer in Minuten *<input name="minutes" type="number" min="0.01" max="1440" step="0.01" value="30" required></label>
+        <label class="full">Notiz<textarea name="note" rows="2" maxlength="1000"></textarea></label>
+      </div>
+      <div id="time-error" class="form-error" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button secondary" data-close="time-dialog">Abbrechen</button><button type="submit" class="button primary">Zeit buchen</button></div>
+    </form>
+  </dialog>
+  <noscript>Bitte aktiviere JavaScript, um die lokale Oberfläche zu verwenden.</noscript>
+</body>
+</html>
